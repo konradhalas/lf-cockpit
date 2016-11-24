@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">LF Cockpit</string>
+
+    <string name="scan">Scan</string>
+    <string name="pause">Pause</string>
+
+    <string name="scan_title">Scan for devices</string>
+    <string name="scan_empty">No devices found. Try again.</string>
+
 </resources>

@@ -3,8 +3,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="pl.konradhalas.lfcockpit.DeviceActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="pl.konradhalas.lfcockpit.DeviceActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#9FA8DA">
+
+        <TextView
+            android:id="@+id/state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Connected"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/signal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-60 dB" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/data"

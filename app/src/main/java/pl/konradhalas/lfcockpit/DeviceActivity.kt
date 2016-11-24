@@ -3,61 +3,78 @@ package pl.konradhalas.lfcockpit
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
+import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
-import com.polidea.rxandroidble.RxBleClient
-import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
-import java.util.*
+import pl.konradhalas.lfcockpit.presenters.DevicePresenter
+import pl.konradhalas.lfcockpit.presenters.DeviceViewModel
 
-class DeviceActivity : AppCompatActivity() {
-    private var subscription: Subscription? = null
+
+class DeviceActivity : AppCompatActivity(), DevicePresenter.UI {
+    private val contentView by lazy { findViewById(R.id.content) as FrameLayout }
     private val dataView by lazy { findViewById(R.id.data) as TextView }
+    private val signalView by lazy { findViewById(R.id.signal) as TextView }
+    private val stateView by lazy { findViewById(R.id.state) as TextView }
+
+    lateinit private var presenter: DevicePresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device)
         title = getDevice().name
-
+        presenter = DevicePresenter(this, this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.activity_device, menu)
         menu.findItem(R.id.action_disconnect).setOnMenuItemClickListener {
-            subscription?.let { it.unsubscribe() }
-            startActivity(Intent(this, MainActivity::class.java))
+            presenter.disconnect()
+            startActivity(Intent(this, ScanActivity::class.java))
             finish()
             true
         }
         return true
     }
 
+    override fun showData(data: String) {
+        dataView.append(data)
+    }
+
+    override fun showError(error: String) {
+        Snackbar.make(contentView, "Error: $error", Snackbar.LENGTH_LONG).show()
+    }
+
+    override fun showConnectionStatus(status: String) {
+        stateView.text = status
+    }
+
+    override fun getDeviceMac() = getDevice().mac
+
+    override fun showSignalStrength(signal: Int) {
+        signalView.text = "$signal dB"
+    }
+
     override fun onResume() {
         super.onResume()
-        val rxBleClient = RxBleClient.create(this)
-        subscription = rxBleClient.getBleDevice(getDevice().mac)
-                .establishConnection(this, false)
-                .flatMap({ connection -> connection.setupNotification(DeviceActivity.RX_TX_UUID) })
-                .flatMap({ notificationObservable -> notificationObservable })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        { data -> dataView.append(String(data, Charsets.US_ASCII)) },
-                        { throwable -> Toast.makeText(this, throwable.toString(), Toast.LENGTH_LONG).show() }
-                )
+        presenter.connect()
     }
 
     override fun onPause() {
         super.onPause()
-        subscription?.unsubscribe()
+        presenter.disconnect()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        presenter.disconnect()
     }
 
     private fun getDevice(): DeviceViewModel = intent.getSerializableExtra(ARG_DEVICE) as DeviceViewModel
 
     companion object {
         private val ARG_DEVICE = "ARG_DEVICE"
-        private val RX_TX_UUID = UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
 
         fun createIntent(ctx: Context, device: DeviceViewModel): Intent {
             return Intent(ctx, DeviceActivity::class.java).putExtra(ARG_DEVICE, device)
