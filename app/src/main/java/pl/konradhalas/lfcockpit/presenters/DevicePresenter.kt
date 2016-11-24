@@ -3,6 +3,7 @@ package pl.konradhalas.lfcockpit.presenters
 import android.content.Context
 import com.polidea.rxandroidble.RxBleClient
 import com.polidea.rxandroidble.RxBleConnection
+import com.polidea.rxandroidble.utils.ConnectionSharingAdapter
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
@@ -18,12 +19,15 @@ class DevicePresenter(val context: Context, val ui: UI) {
     private var subscription: Subscription? = null
     private var connectionStateSubscription: Subscription? = null
 
+    private var connectionObservable: Observable<RxBleConnection>? = null
+
     fun connect() {
         val rxBleClient = RxBleClient.create(context)
         val bleDevice = rxBleClient.getBleDevice(ui.getDeviceMac())
-        subscription = bleDevice
+        connectionObservable = bleDevice
                 .establishConnection(context, false)
-
+                .compose(ConnectionSharingAdapter())
+        subscription = connectionObservable!!
                 .flatMap { connection ->
                     Observable.merge(
                             connection.setupNotification(RX_TX_UUID).flatMap { o -> o }.map { data -> DataOrSignal.Data(String(data, Charsets.US_ASCII)) },
@@ -56,6 +60,20 @@ class DevicePresenter(val context: Context, val ui: UI) {
                 )
     }
 
+    fun toggleLed() {
+        if (connectionObservable != null) {
+            connectionObservable!!
+                    .flatMap { it.writeCharacteristic(RX_TX_UUID, "TOOGLE".toByteArray()) }
+                    .take(1)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            {},
+                            { throwable -> ui.showError(throwable.toString()) }
+                    )
+
+        }
+    }
+
     fun disconnect() {
         subscription?.unsubscribe()
         connectionStateSubscription?.unsubscribe()
@@ -72,4 +90,5 @@ class DevicePresenter(val context: Context, val ui: UI) {
     companion object {
         private val RX_TX_UUID = UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
     }
+
 }
