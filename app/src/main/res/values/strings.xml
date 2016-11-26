@@ -6,5 +6,7 @@
 
     <string name="scan_title">Scan for devices</string>
     <string name="scan_empty">No devices found. Try again.</string>
+    <string name="reconnect">Reconnect</string>
+    <string name="disconnect">Disconnect</string>
 
 </resources>

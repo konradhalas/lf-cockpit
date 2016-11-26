@@ -56,8 +56,8 @@ class DeviceActivity : AppCompatActivity(), DevicePresenter.UI {
 
     override fun getDeviceMac() = getDevice().mac
 
-    override fun showSignalStrength(signal: Int) {
-        signalView.text = "$signal dB"
+    override fun showSignalStrength(signal: Int?) {
+        signalView.text = "${signal ?: "-"} dB"
     }
 
     override fun onResume() {
@@ -67,11 +67,6 @@ class DeviceActivity : AppCompatActivity(), DevicePresenter.UI {
 
     override fun onPause() {
         super.onPause()
-        presenter.disconnect()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
         presenter.disconnect()
     }
 
