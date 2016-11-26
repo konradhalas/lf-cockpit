@@ -4,30 +4,36 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.Snackbar
-import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.widget.Button
 import android.widget.LinearLayout
-import android.widget.RadioButton
 import android.widget.TextView
+import pl.konradhalas.lfcockpit.di.PresenterComponent
 import pl.konradhalas.lfcockpit.presenters.DevicePresenter
 import pl.konradhalas.lfcockpit.presenters.DeviceViewModel
+import javax.inject.Inject
 
 
-class DeviceActivity : AppCompatActivity(), DevicePresenter.UI {
+class DeviceActivity : BaseActivity(), DevicePresenter.UI {
+
     private val contentView by lazy { findViewById(R.id.content) as LinearLayout }
     private val signalView by lazy { findViewById(R.id.signal) as TextView }
     private val stateView by lazy { findViewById(R.id.state) as TextView }
     private val toggleButton by lazy { findViewById(R.id.toggle_button) as Button }
-    private val buttonStatus by lazy { findViewById(R.id.button_status) as RadioButton }
+    private val buttonStatus by lazy { findViewById(R.id.button_status) as Button }
 
-    lateinit private var presenter: DevicePresenter
+    @Inject
+    lateinit var presenter: DevicePresenter
+
+    override fun performInjection(component: PresenterComponent) {
+        component.inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        presenter.setup(this)
         setContentView(R.layout.activity_device)
         title = getDevice().name
-        presenter = DevicePresenter(this, this)
         toggleButton.setOnClickListener { presenter.toggleLed() }
     }
 
@@ -43,7 +49,7 @@ class DeviceActivity : AppCompatActivity(), DevicePresenter.UI {
     }
 
     override fun showData(data: String) {
-        buttonStatus.isChecked = !buttonStatus.isChecked
+        buttonStatus.text = "Button state: $data"
     }
 
     override fun showError(error: String) {

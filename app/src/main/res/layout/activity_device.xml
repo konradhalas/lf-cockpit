@@ -16,7 +16,7 @@
 
         <TextView
             android:id="@+id/state"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             tools:text="Connected" />
@@ -25,23 +25,29 @@
             android:id="@+id/signal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="-60 dB" />
+            tools:text="-60 dB" />
 
     </LinearLayout>
 
     <Button
         android:id="@+id/toggle_button"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="0dp"
         style="@style/Widget.AppCompat.Button.Colored"
-        android:text="Toggle LED" />
+        android:layout_weight="1"
+        android:text="@string/toggle_led" />
 
-    <RadioButton
+    <Button
+        android:layout_weight="1"
         android:id="@+id/button_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:allowUndo="true"
-        android:text="Button status" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="8dp"
+        android:clickable="false"
+        android:text="@string/button_state" />
+
 </LinearLayout>

@@ -1,13 +1,14 @@
 package pl.konradhalas.lfcockpit.presenters
 
-import android.content.Context
 import com.polidea.rxandroidble.RxBleClient
 import com.polidea.rxandroidble.RxBleDevice
+import pl.konradhalas.lfcockpit.di.PresenterScoped
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import java.io.Serializable
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 data class DeviceViewModel(val name: String, val mac: String) : Serializable {
     companion object {
@@ -20,21 +21,22 @@ data class DeviceViewModel(val name: String, val mac: String) : Serializable {
     }
 }
 
-class ScanPresenter(val context: Context, val ui: UI) {
+@PresenterScoped
+class ScanPresenter @Inject constructor(private val rxBleClient: RxBleClient) : BasePresenter<ScanPresenter.UI>() {
     private var scanSubscription: Subscription? = null
 
     fun startScan() {
-        scanSubscription = RxBleClient.create(context)
+        scanSubscription = rxBleClient
                 .scanBleDevices()
                 .sample(1, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnUnsubscribe { ui.scanFinished() }
-                .doOnSubscribe { ui.scanStarted() }
+                .doOnUnsubscribe { ui?.scanFinished() }
+                .doOnSubscribe { ui?.scanStarted() }
                 .map { result -> DeviceViewModel.of(result.bleDevice) }
                 .subscribe(
-                        { device -> ui.showDevice(device) },
+                        { device -> ui?.showDevice(device) },
                         { throwable ->
-                            ui.showScanError(throwable.toString())
+                            ui?.showScanError(throwable.toString())
                             stopScan()
                         }
                 )
