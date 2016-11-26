@@ -9,6 +9,8 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import pl.konradhalas.lfcockpit.di.PresenterComponent
+import pl.konradhalas.lfcockpit.domain.Command
+import pl.konradhalas.lfcockpit.domain.Message
 import pl.konradhalas.lfcockpit.presenters.DevicePresenter
 import pl.konradhalas.lfcockpit.presenters.DeviceViewModel
 import javax.inject.Inject
@@ -34,7 +36,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         presenter.setup(this)
         setContentView(R.layout.activity_device)
         title = getDevice().name
-        toggleButton.setOnClickListener { presenter.toggleLed() }
+        toggleButton.setOnClickListener { presenter.sendCommand(Command.ToggleLEDCommand()) }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -48,8 +50,10 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         return true
     }
 
-    override fun showData(data: String) {
-        buttonStatus.text = "Button state: $data"
+    override fun receivedMessage(message: Message) {
+        when (message) {
+            is Message.ButtonMessage -> buttonStatus.text = "Button state: ${if (message.isUp) "UP" else "DOWN"}"
+        }
     }
 
     override fun showError(error: String) {

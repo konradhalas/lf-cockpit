@@ -1,88 +1,61 @@
 package pl.konradhalas.lfcockpit.presenters
 
-import android.content.Context
 import android.util.Log
-import com.polidea.rxandroidble.RxBleClient
-import com.polidea.rxandroidble.RxBleConnection
-import com.polidea.rxandroidble.utils.ConnectionSharingAdapter
 import pl.konradhalas.lfcockpit.di.PresenterScoped
-import rx.Observable
-import rx.android.schedulers.AndroidSchedulers
-import rx.subscriptions.CompositeSubscription
-import java.util.*
-import java.util.concurrent.TimeUnit
+import pl.konradhalas.lfcockpit.domain.BLEDeviceService
+import pl.konradhalas.lfcockpit.domain.Command
+import pl.konradhalas.lfcockpit.domain.Message
 import javax.inject.Inject
-
 
 @PresenterScoped
 class DevicePresenter @Inject constructor(
-        private val context: Context,
-        private val rxBleClient: RxBleClient) : BasePresenter<DevicePresenter.UI>() {
-
-    private var compositeSubscription = CompositeSubscription()
-    private var connectionObservable: Observable<RxBleConnection>? = null
+        private val bleDeviceService: BLEDeviceService) : BasePresenter<DevicePresenter.UI>() {
 
     fun connect() {
         showUnknownState()
         ui?.let { ui ->
-            val bleDevice = rxBleClient.getBleDevice(ui.getDeviceMac())
-            connectionObservable = bleDevice
-                    .establishConnection(context, false)
-                    .compose(ConnectionSharingAdapter())
-            val notificationSubscription = connectionObservable!!
-                    .flatMap { connection -> connection.setupNotification(RX_TX_UUID) }
-                    .flatMap { o -> o }
-                    .map { data -> String(data, Charsets.US_ASCII) }
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            { data -> ui.showData(data) },
-                            { throwable -> onError(throwable) }
-                    )
-            compositeSubscription.add(notificationSubscription)
-            val signalSubscription = connectionObservable!!
-                    .flatMap { connection -> Observable.interval(1, TimeUnit.SECONDS).flatMap { connection.readRssi() } }
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            { data -> ui.showSignalStrength(data) },
-                            { throwable -> onError(throwable) }
-                    )
-            compositeSubscription.add(signalSubscription)
-            val connectionStateSubscription = bleDevice.observeConnectionStateChanges()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            { state ->
-                                ui.showConnectionStatus(when (state) {
-                                    RxBleConnection.RxBleConnectionState.CONNECTING -> "Connecting"
-                                    RxBleConnection.RxBleConnectionState.CONNECTED -> "Connected"
-                                    RxBleConnection.RxBleConnectionState.DISCONNECTED -> "Disconnected"
-                                    RxBleConnection.RxBleConnectionState.DISCONNECTING -> "Disconnecting"
-                                    else -> "Unknown"
-                                })
-                            },
-                            { throwable -> onError(throwable) }
-                    )
-            compositeSubscription.add(connectionStateSubscription)
+            bleDeviceService.manageSubscription(
+                    bleDeviceService
+                            .connect(ui.getDeviceMac())
+                            .subscribe(
+                                    { state -> ui.showConnectionStatus(state.description) },
+                                    { throwable -> onError(throwable) }
+                            )
+            )
+            bleDeviceService.manageSubscription(
+                    bleDeviceService
+                            .checkSignal()
+                            .subscribe(
+                                    { signal -> ui.showSignalStrength(signal.strength) },
+                                    { throwable -> onError(throwable) }
+                            )
+            )
+            bleDeviceService.manageSubscription(
+                    bleDeviceService
+                            .receiveMessage()
+                            .subscribe(
+                                    { message -> ui.receivedMessage(message) },
+                                    { throwable -> onError(throwable) }
+                            )
+            )
+
         }
     }
 
-
-    fun toggleLed() {
-        if (connectionObservable != null) {
-            connectionObservable!!
-                    .flatMap { it.writeCharacteristic(RX_TX_UUID, "T".toByteArray()) }
-                    .take(1)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            {},
-                            { throwable -> onError(throwable) }
-                    )
-
-        }
+    fun sendCommand(command: Command) {
+        bleDeviceService.manageSubscription(
+                bleDeviceService
+                        .sendCommand(command)
+                        .subscribe(
+                                {},
+                                { throwable -> onError(throwable) }
+                        )
+        )
     }
 
     fun disconnect() {
         showUnknownState()
-        compositeSubscription.clear()
+        bleDeviceService.disconnect()
     }
 
     private fun showUnknownState() {
@@ -100,13 +73,9 @@ class DevicePresenter @Inject constructor(
     interface UI {
         fun getDeviceMac(): String
         fun showSignalStrength(signal: Int?)
-        fun showData(data: String)
+        fun receivedMessage(message: Message)
         fun showError(error: String)
         fun showConnectionStatus(toString: String)
-    }
-
-    companion object {
-        private val RX_TX_UUID = UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
     }
 
 }
