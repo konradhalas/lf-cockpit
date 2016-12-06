@@ -9,8 +9,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import pl.konradhalas.lfcockpit.di.PresenterComponent
-import pl.konradhalas.lfcockpit.domain.Command
-import pl.konradhalas.lfcockpit.domain.Message
 import pl.konradhalas.lfcockpit.presenters.DevicePresenter
 import pl.konradhalas.lfcockpit.presenters.DeviceViewModel
 import javax.inject.Inject
@@ -21,6 +19,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
     private val contentView by lazy { findViewById(R.id.content) as LinearLayout }
     private val signalView by lazy { findViewById(R.id.signal) as TextView }
     private val stateView by lazy { findViewById(R.id.state) as TextView }
+    private val batteryView by lazy { findViewById(R.id.battery) as TextView }
     private val toggleButton by lazy { findViewById(R.id.toggle_button) as Button }
     private val buttonStatus by lazy { findViewById(R.id.button_status) as Button }
 
@@ -36,7 +35,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         presenter.setup(this)
         setContentView(R.layout.activity_device)
         title = getDevice().name
-        toggleButton.setOnClickListener { presenter.sendCommand(Command.ToggleLEDCommand()) }
+        toggleButton.setOnClickListener { presenter.toggleLED() }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -50,9 +49,15 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         return true
     }
 
-    override fun receivedMessage(message: Message) {
-        when (message) {
-            is Message.ButtonMessage -> buttonStatus.text = "Button state: ${if (message.isUp) "UP" else "DOWN"}"
+    override fun showButtonState(up: Boolean) {
+        buttonStatus.text = "Button state: ${if (up) "UP" else "DOWN"}"
+    }
+
+    override fun showBatteryVoltage(voltage: Int?) {
+        if (voltage != null) {
+            batteryView.text = "%.2f V".format(voltage.toFloat() / 1000)
+        } else {
+            batteryView.text = "- V"
         }
     }
 

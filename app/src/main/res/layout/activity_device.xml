@@ -25,7 +25,18 @@
             android:id="@+id/signal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:drawableEnd="@drawable/ic_signal"
+            android:drawablePadding="6dp"
+            android:layout_marginEnd="16dp"
             tools:text="-60 dB" />
+
+        <TextView
+            android:id="@+id/battery"
+            android:drawableEnd="@drawable/ic_battery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawablePadding="3dp"
+            tools:text="7.56 V" />
 
     </LinearLayout>
 

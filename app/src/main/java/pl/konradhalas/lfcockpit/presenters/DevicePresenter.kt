@@ -5,6 +5,8 @@ import pl.konradhalas.lfcockpit.di.PresenterScoped
 import pl.konradhalas.lfcockpit.domain.BLEDeviceService
 import pl.konradhalas.lfcockpit.domain.Command
 import pl.konradhalas.lfcockpit.domain.Message
+import rx.Observable
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @PresenterScoped
@@ -34,18 +36,34 @@ class DevicePresenter @Inject constructor(
                     bleDeviceService
                             .receiveMessage()
                             .subscribe(
-                                    { message -> ui.receivedMessage(message) },
+                                    { message ->
+                                        when (message) {
+                                            is Message.ButtonMessage -> ui.showButtonState(message.isUp)
+                                            is Message.BatteryMessage -> ui.showBatteryVoltage(message.voltage)
+                                        }
+                                    },
                                     { throwable -> onError(throwable) }
                             )
             )
 
+            bleDeviceService.manageSubscription(
+                    Observable
+                            .interval(3, TimeUnit.SECONDS)
+                            .timeInterval()
+                            .flatMap { bleDeviceService.sendCommand(Command.BatteryReadRequestCommand()) }
+                            .subscribe(
+                                    {},
+                                    { throwable -> onError(throwable) }
+                            )
+            )
         }
     }
 
-    fun sendCommand(command: Command) {
+    fun toggleLED() {
         bleDeviceService.manageSubscription(
                 bleDeviceService
-                        .sendCommand(command)
+                        .sendCommand(Command.ToggleLEDCommand())
+                        .take(1)
                         .subscribe(
                                 {},
                                 { throwable -> onError(throwable) }
@@ -62,6 +80,7 @@ class DevicePresenter @Inject constructor(
         ui?.let {
             it.showConnectionStatus("Unknown")
             it.showSignalStrength(null)
+            it.showBatteryVoltage(null)
         }
     }
 
@@ -73,9 +92,10 @@ class DevicePresenter @Inject constructor(
     interface UI {
         fun getDeviceMac(): String
         fun showSignalStrength(signal: Int?)
-        fun receivedMessage(message: Message)
         fun showError(error: String)
         fun showConnectionStatus(toString: String)
+        fun showButtonState(up: Boolean)
+        fun showBatteryVoltage(voltage: Int?)
     }
 
 }

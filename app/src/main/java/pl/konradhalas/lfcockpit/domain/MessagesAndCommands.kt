@@ -7,12 +7,18 @@ sealed class Command {
         }
     }
 
+    class BatteryReadRequestCommand : Command() {
+        override fun serialize(): String {
+            return "BATTERY_READ"
+        }
+    }
+
     abstract fun serialize(): String
 }
 
 sealed class Message {
-    class ButtonMessage(val isUp: Boolean) : Message() {
-    }
+    class ButtonMessage(val isUp: Boolean) : Message()
+    class BatteryMessage(val voltage: Int) : Message()
 }
 
 class MessageParseError : Exception()
@@ -24,6 +30,7 @@ class MessagesParser {
             val tokens = data.split(" ")
             return when (tokens[0]) {
                 "BUTTON" -> Message.ButtonMessage(tokens[1] == "UP")
+                "BATTERY" -> Message.BatteryMessage(tokens[1].toInt())
                 else -> throw MessageParseError()
             }
         }

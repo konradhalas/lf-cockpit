@@ -1,6 +1,7 @@
 package pl.konradhalas.lfcockpit.domain
 
 import android.content.Context
+import android.util.Log
 import com.polidea.rxandroidble.RxBleClient
 import com.polidea.rxandroidble.RxBleConnection
 import com.polidea.rxandroidble.utils.ConnectionSharingAdapter
@@ -38,6 +39,7 @@ class BLEDeviceService @Inject constructor(
 
     private var compositeSubscription = CompositeSubscription()
     private var connectionObservable: Observable<RxBleConnection>? = null
+    private var TAG = "BLE Device Service"
 
     fun connect(mac: String): Observable<ConnectionState> {
         connectionObservable = rxBleClient
@@ -55,15 +57,18 @@ class BLEDeviceService @Inject constructor(
         return connectionObservable!!
                 .flatMap { connection -> connection.setupNotification(RX_TX_UUID) }
                 .flatMap { o -> o }
-                .map { data -> MessagesParser.parse(String(data, Charsets.US_ASCII)) }
+                .map { data -> String(data, Charsets.US_ASCII) }
+                .doOnNext { data -> Log.i(TAG, "received $data") }
+                .map { data -> MessagesParser.parse(data) }
                 .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun sendCommand(command: Command): Observable<Nothing> {
+        var data = CommandsSerializer.serialize(command)
         return connectionObservable!!
-                .flatMap { it.writeCharacteristic(RX_TX_UUID, CommandsSerializer.serialize(command)) }
-                .take(1)
+                .flatMap { it.writeCharacteristic(RX_TX_UUID, data) }
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { data -> Log.i(TAG, "send ${String(data, Charsets.US_ASCII)}") }
                 .flatMap { Observable.empty<Nothing>() }
     }
 
