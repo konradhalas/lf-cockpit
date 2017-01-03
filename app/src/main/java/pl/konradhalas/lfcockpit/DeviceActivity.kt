@@ -8,7 +8,12 @@ import android.view.Menu
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import pl.konradhalas.lfcockpit.di.PresenterComponent
+import pl.konradhalas.lfcockpit.domain.SensorValue
 import pl.konradhalas.lfcockpit.presenters.DevicePresenter
 import pl.konradhalas.lfcockpit.presenters.DeviceViewModel
 import javax.inject.Inject
@@ -21,7 +26,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
     private val stateView by lazy { findViewById(R.id.state) as TextView }
     private val batteryView by lazy { findViewById(R.id.battery) as TextView }
     private val toggleButton by lazy { findViewById(R.id.toggle_button) as Button }
-    private val buttonStatus by lazy { findViewById(R.id.button_status) as Button }
+    private val sensorsChart by lazy { findViewById(R.id.sensors_chart) as BarChart }
 
     @Inject
     lateinit var presenter: DevicePresenter
@@ -36,6 +41,22 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         setContentView(R.layout.activity_device)
         title = getDevice().name
         toggleButton.setOnClickListener { presenter.toggleLED() }
+        setupSensorsChart()
+    }
+
+    private fun setupSensorsChart() {
+        sensorsChart.description = null
+        sensorsChart.isScaleXEnabled = false
+        sensorsChart.axisLeft.axisMaximum = 4095f
+        sensorsChart.legend.isEnabled = false
+        sensorsChart.xAxis.isEnabled = false
+        sensorsChart.axisLeft.isEnabled = false
+        sensorsChart.axisRight.isEnabled = false
+        sensorsChart.isClickable = false
+        sensorsChart.isDragEnabled = false
+        sensorsChart.isFocusable = false
+        sensorsChart.isDoubleTapToZoomEnabled = false
+        sensorsChart.setPinchZoom(false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -49,8 +70,15 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         return true
     }
 
-    override fun showButtonState(up: Boolean) {
-        buttonStatus.text = "Button state: ${if (up) "UP" else "DOWN"}"
+    override fun showSensorsValues(sensorsValues: List<SensorValue>) {
+        val entries = sensorsValues.map {
+            sensorValue ->
+            BarEntry(sensorValue.number.toFloat(), sensorValue.value.toFloat())
+        }
+        val dataSet = BarDataSet(entries, null)
+        dataSet.color = R.color.colorPrimaryDark
+        sensorsChart.data = BarData(dataSet)
+        sensorsChart.invalidate()
     }
 
     override fun showBatteryVoltage(voltage: Int?) {

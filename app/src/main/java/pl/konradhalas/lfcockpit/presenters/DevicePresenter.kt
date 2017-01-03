@@ -5,6 +5,7 @@ import pl.konradhalas.lfcockpit.di.PresenterScoped
 import pl.konradhalas.lfcockpit.domain.BLEDeviceService
 import pl.konradhalas.lfcockpit.domain.Command
 import pl.konradhalas.lfcockpit.domain.Message
+import pl.konradhalas.lfcockpit.domain.SensorValue
 import rx.Observable
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -38,8 +39,8 @@ class DevicePresenter @Inject constructor(
                             .subscribe(
                                     { message ->
                                         when (message) {
-                                            is Message.ButtonMessage -> ui.showButtonState(message.isUp)
                                             is Message.BatteryMessage -> ui.showBatteryVoltage(message.voltage)
+                                            is Message.SensorsMessage -> ui.showSensorsValues(message.values)
                                         }
                                     },
                                     { throwable -> onError(throwable) }
@@ -48,9 +49,9 @@ class DevicePresenter @Inject constructor(
 
             bleDeviceService.manageSubscription(
                     Observable
-                            .interval(3, TimeUnit.SECONDS)
+                            .interval(200, TimeUnit.MILLISECONDS)
                             .timeInterval()
-                            .flatMap { bleDeviceService.sendCommand(Command.BatteryReadRequestCommand()) }
+                            .flatMap { bleDeviceService.sendCommand(Command.ReadSensorsRequestCommand()) }
                             .subscribe(
                                     {},
                                     { throwable -> onError(throwable) }
@@ -94,8 +95,8 @@ class DevicePresenter @Inject constructor(
         fun showSignalStrength(signal: Int?)
         fun showError(error: String)
         fun showConnectionStatus(toString: String)
-        fun showButtonState(up: Boolean)
         fun showBatteryVoltage(voltage: Int?)
+        fun showSensorsValues(sensorsValues: List<SensorValue>)
     }
 
 }

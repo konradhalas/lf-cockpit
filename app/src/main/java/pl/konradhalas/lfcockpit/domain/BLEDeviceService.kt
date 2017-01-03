@@ -9,6 +9,7 @@ import pl.konradhalas.lfcockpit.di.PresenterScoped
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
+import rx.observables.StringObservable
 import rx.subscriptions.CompositeSubscription
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -38,7 +39,7 @@ class BLEDeviceService @Inject constructor(
         private val rxBleClient: RxBleClient) {
 
     private var compositeSubscription = CompositeSubscription()
-    private var connectionObservable: Observable<RxBleConnection>? = null
+    private var connectionObservable: Observable<RxBleConnection> = Observable.empty()
     private var TAG = "BLE Device Service"
 
     fun connect(mac: String): Observable<ConnectionState> {
@@ -54,18 +55,20 @@ class BLEDeviceService @Inject constructor(
     }
 
     fun receiveMessage(): Observable<Message> {
-        return connectionObservable!!
+        return connectionObservable
                 .flatMap { connection -> connection.setupNotification(RX_TX_UUID) }
                 .flatMap { o -> o }
                 .map { data -> String(data, Charsets.US_ASCII) }
+                .to { data -> StringObservable.byLine(data) }
                 .doOnNext { data -> Log.i(TAG, "received $data") }
                 .map { data -> MessagesParser.parse(data) }
                 .observeOn(AndroidSchedulers.mainThread())
+                .retry()
     }
 
     fun sendCommand(command: Command): Observable<Nothing> {
-        var data = CommandsSerializer.serialize(command)
-        return connectionObservable!!
+        val data = CommandsSerializer.serialize(command)
+        return connectionObservable
                 .flatMap { it.writeCharacteristic(RX_TX_UUID, data) }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { data -> Log.i(TAG, "send ${String(data, Charsets.US_ASCII)}") }
@@ -73,7 +76,7 @@ class BLEDeviceService @Inject constructor(
     }
 
     fun checkSignal(): Observable<Signal> {
-        return connectionObservable!!
+        return connectionObservable
                 .flatMap { connection -> Observable.interval(1, TimeUnit.SECONDS).flatMap { connection.readRssi() } }
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(::Signal)

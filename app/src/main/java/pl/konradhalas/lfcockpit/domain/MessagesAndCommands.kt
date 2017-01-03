@@ -7,18 +7,21 @@ sealed class Command {
         }
     }
 
-    class BatteryReadRequestCommand : Command() {
+    class ReadSensorsRequestCommand : Command() {
         override fun serialize(): String {
-            return "BATTERY_READ"
+            return "READ_SENSORS"
         }
     }
+
 
     abstract fun serialize(): String
 }
 
+data class SensorValue(val number: Int, val value: Int)
+
 sealed class Message {
-    class ButtonMessage(val isUp: Boolean) : Message()
     class BatteryMessage(val voltage: Int) : Message()
+    class SensorsMessage(val values: List<SensorValue>) : Message()
 }
 
 class MessageParseError : Exception()
@@ -29,10 +32,19 @@ class MessagesParser {
         fun parse(data: String): Message {
             val tokens = data.split(" ")
             return when (tokens[0]) {
-                "BUTTON" -> Message.ButtonMessage(tokens[1] == "UP")
-                "BATTERY" -> Message.BatteryMessage(tokens[1].toInt())
+                "BATTERY" -> parseBatteryMessage(tokens)
+                "SENSORS" -> parseSensorsMessage(tokens)
                 else -> throw MessageParseError()
             }
+        }
+
+        private fun parseBatteryMessage(tokens: List<String>) = Message.BatteryMessage(tokens[1].toInt())
+
+        private fun parseSensorsMessage(tokens: List<String>): Message.SensorsMessage {
+            return Message.SensorsMessage((1..tokens.size - 1).map {
+                index ->
+                SensorValue(index, tokens[index].toInt())
+            })
         }
     }
 
@@ -41,8 +53,9 @@ class MessagesParser {
 class CommandsSerializer {
 
     companion object {
+        private val BLE_MTU = 20
         fun serialize(command: Command): ByteArray {
-            return command.serialize().padEnd(16).toByteArray()
+            return command.serialize().padEnd(BLE_MTU).toByteArray()
         }
     }
 }

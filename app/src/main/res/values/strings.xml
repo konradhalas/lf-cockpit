@@ -8,7 +8,7 @@
     <string name="scan_empty">No devices found. Try again.</string>
     <string name="reconnect">Reconnect</string>
     <string name="disconnect">Disconnect</string>
-    <string name="toggle_led">Toggle LED</string>
+    <string name="toggle_led">Start / Stop</string>
     <string name="button_state">Button state: -</string>
 
 </resources>

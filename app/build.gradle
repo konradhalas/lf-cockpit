@@ -48,10 +48,18 @@ dependencies {
     provided 'org.glassfish:javax.annotation:10.0-b28'
 
     // Bluetooth
-    compile "com.polidea.rxandroidble:rxandroidble:1.1.0"
+    compile "com.polidea.rxandroidble:rxandroidble:1.2.0-SNAPSHOT"
+
+    compile group: 'io.reactivex', name: 'rxjava-string', version: '1.1.1'
+
+    // Charts
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.1'
 
     testCompile 'junit:junit:4.12'
 }
 repositories {
     mavenCentral()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
