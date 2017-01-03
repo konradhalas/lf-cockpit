@@ -48,6 +48,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         sensorsChart.description = null
         sensorsChart.isScaleXEnabled = false
         sensorsChart.axisLeft.axisMaximum = 4095f
+        sensorsChart.axisLeft.axisMinimum = 0f
         sensorsChart.legend.isEnabled = false
         sensorsChart.xAxis.isEnabled = false
         sensorsChart.axisLeft.isEnabled = false
