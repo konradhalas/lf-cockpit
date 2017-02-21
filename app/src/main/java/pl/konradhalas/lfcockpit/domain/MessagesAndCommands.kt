@@ -1,18 +1,17 @@
 package pl.konradhalas.lfcockpit.domain
 
 sealed class Command {
-    class ToggleLEDCommand : Command() {
+    class StartStopCommand : Command() {
         override fun serialize(): String {
-            return "TOGGLE"
+            return "T"
         }
     }
 
-    class ReadSensorsRequestCommand : Command() {
+    class CalibrateCommand : Command() {
         override fun serialize(): String {
-            return "READ_SENSORS"
+            return "C"
         }
     }
-
 
     abstract fun serialize(): String
 }
@@ -22,9 +21,8 @@ data class SensorValue(val number: Int, val value: Int)
 sealed class Message {
     class BatteryMessage(val voltage: Int) : Message()
     class SensorsMessage(val values: List<SensorValue>) : Message()
+    class UnknownMessage(val data: String) : Message()
 }
-
-class MessageParseError : Exception()
 
 class MessagesParser {
 
@@ -32,9 +30,9 @@ class MessagesParser {
         fun parse(data: String): Message {
             val tokens = data.split(" ")
             return when (tokens[0]) {
-                "BATTERY" -> parseBatteryMessage(tokens)
-                "SENSORS" -> parseSensorsMessage(tokens)
-                else -> throw MessageParseError()
+                "B" -> parseBatteryMessage(tokens)
+                "S" -> parseSensorsMessage(tokens)
+                else -> Message.UnknownMessage(data)
             }
         }
 

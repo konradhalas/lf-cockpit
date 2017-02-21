@@ -6,8 +6,6 @@ import pl.konradhalas.lfcockpit.domain.BLEDeviceService
 import pl.konradhalas.lfcockpit.domain.Command
 import pl.konradhalas.lfcockpit.domain.Message
 import pl.konradhalas.lfcockpit.domain.SensorValue
-import rx.Observable
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @PresenterScoped
@@ -46,24 +44,25 @@ class DevicePresenter @Inject constructor(
                                     { throwable -> onError(throwable) }
                             )
             )
-
-            bleDeviceService.manageSubscription(
-                    Observable
-                            .interval(200, TimeUnit.MILLISECONDS)
-                            .timeInterval()
-                            .flatMap { bleDeviceService.sendCommand(Command.ReadSensorsRequestCommand()) }
-                            .subscribe(
-                                    {},
-                                    { throwable -> onError(throwable) }
-                            )
-            )
         }
     }
 
-    fun toggleLED() {
+    fun startStop() {
         bleDeviceService.manageSubscription(
                 bleDeviceService
-                        .sendCommand(Command.ToggleLEDCommand())
+                        .sendCommand(Command.StartStopCommand())
+                        .take(1)
+                        .subscribe(
+                                {},
+                                { throwable -> onError(throwable) }
+                        )
+        )
+    }
+
+    fun calibrate() {
+        bleDeviceService.manageSubscription(
+                bleDeviceService
+                        .sendCommand(Command.CalibrateCommand())
                         .take(1)
                         .subscribe(
                                 {},

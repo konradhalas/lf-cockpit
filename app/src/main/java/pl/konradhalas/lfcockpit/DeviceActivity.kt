@@ -26,6 +26,7 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
     private val stateView by lazy { findViewById(R.id.state) as TextView }
     private val batteryView by lazy { findViewById(R.id.battery) as TextView }
     private val toggleButton by lazy { findViewById(R.id.toggle_button) as Button }
+    private val calibrateButton by lazy { findViewById(R.id.calibrate_button) as Button }
     private val sensorsChart by lazy { findViewById(R.id.sensors_chart) as BarChart }
 
     @Inject
@@ -40,7 +41,8 @@ class DeviceActivity : BaseActivity(), DevicePresenter.UI {
         presenter.setup(this)
         setContentView(R.layout.activity_device)
         title = getDevice().name
-        toggleButton.setOnClickListener { presenter.toggleLED() }
+        toggleButton.setOnClickListener { presenter.startStop() }
+        calibrateButton.setOnClickListener { presenter.calibrate() }
         setupSensorsChart()
     }
 
